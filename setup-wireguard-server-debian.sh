@@ -11,9 +11,9 @@ set -e
 source colors.sh
 
 INFO "Checking dependencies"
-[[ $(nce --help | grep "GNU netcat") ]] || ERROR "not found: GNU netcat"        ; depfail=1
-[[ $(which ssh) ]]                      || ERROR "not found: openssh client"        ; depfail=1
-[[ $(which wgw) ]]                      || ERROR "not found: wireguard-tools"   ; depfail=1
+[[ $(nc --help | grep "GNU netcat") ]]  || ERROR "not found: GNU netcat"        ; depfail=1
+[[ $(which ssh) ]]                      || ERROR "not found: openssh client"    ; depfail=1
+[[ $(which wg) ]]                       || ERROR "not found: wireguard-tools"   ; depfail=1
 if [[ $depfail == "1" ]]; then
     exit 1;
 fi
