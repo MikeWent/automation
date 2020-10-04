@@ -1,14 +1,29 @@
 #!/bin/bash
 
 # usage:
-#       ./setup-wireguard-server-debian.sh 123.45.67.89
-
+#       ./setup-wireguard-server-debian.sh serverip [subnet]
+#
+#        serverip   =   remote server with ssh enabled
+#        subnet     =   first 3 octets of IPv4 subnet
+#                       for example 10.10.10 (will be converted to 10.10.10.0/24)
+#
+# example:
+#       ./setup-wireguard-server-debian.sh 11.22.33.44 10.10.5
+#       
+#       this will connect to ssh server on 11.22.33.44 and 
+#       install and configure a wireguard server with local ip 10.10.5.1
+#       
 # dependencies:
-#   ssh client
-#   GNU netcat
-#   wireguard-tools
+#       ssh client
+#       GNU netcat
+#       wireguard-tools
+
 set -e
 source colors.sh
+
+[[ -n "$2" ]] && wg_subnet="$2" || wg_subnet="10.10.10"
+CONFIRM "Confirm wireguard subnet: ${WHITE}${wg_subnet}.0/24"
+read -n 1
 
 INFO "Checking dependencies"
 [[ $(nc --help | grep "GNU netcat") ]] || depfail=1
@@ -44,14 +59,14 @@ cat <<EOF | ssh root@$1 tee /etc/wireguard/wg0.conf
 PrivateKey = $server_privkey
 ListenPort = $server_port
 SaveConfig = false
-Address = 10.10.10.1/24
+Address = ${wg_subnet}.1/24
 PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
 
 # peer
 [Peer]
 PublicKey = $client_pubkey
-AllowedIPs = 10.10.10.2
+AllowedIPs = ${wg_subnet}.2
 
 EOF
 
@@ -65,11 +80,12 @@ SUCCESS "Save your client configuration:"
 
 cat <<EOF
 [Interface]
-Address = 10.10.10.2/24
+Address = ${wg_subnet}.2/24
 PrivateKey = $client_privkey
 
 [Peer]
 PublicKey = $server_pubkey
-AllowedIPs = 0.0.0.0/0
+AllowedIPs = ${wg_subnet}.0/24
+#AllowedIPs = 0.0.0.0/0
 Endpoint = $1:$server_port
 EOF

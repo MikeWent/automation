@@ -23,3 +23,7 @@ function SUCCESS {
 function INFO {
     echo -e "${BLUE}${INDICATOR} $1 ${NC}"
 }
+
+function CONFIRM {
+    echo -e "${PURPLE}${INDICATOR} $1 ${NC}"
+}
