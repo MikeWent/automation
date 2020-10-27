@@ -33,8 +33,14 @@ if [[ "$depfail" = "1" ]]; then
     exit 1;
 fi
 
+INFO "Switching debian repos to testing"
+ssh root@$1 'cp {/etc/apt/sources.list,/etc/apt/sources.list.prewg}; sed -e "s/buster/testing/g" -e "s/.*security.*//g" -e "s/.*updates.*//g" -e "s/#.*//g" -i /etc/apt/sources.list'
+
 INFO "Updating server packages"
-ssh root@$1 'apt-get update && apt-get upgrade -y'
+ssh root@$1 'yes | apt-get update'
+ssh root@$1 'yes | apt-get -y dist-upgrade'
+ssh root@$1 'yes | apt-get -y upgrade'
+
 ssh_port=$(ssh root@$1 'echo $SSH_CONNECTION' | awk '{print $4}')
 ssh root@$1 reboot
 
@@ -44,7 +50,7 @@ while [[ ! $(echo test | nc -w 3 $1 $ssh_port | grep SSH) ]]; do
 done
 
 INFO "Installing wireguard"
-ssh root@$1 'apt-get install -y wireguard wireguard-tools wireguard-dkms linux-headers-$(uname -r)'
+ssh root@$1 'apt-get install -y wireguard wireguard-tools'
 
 INFO "Configuring wireguard"
 client_privkey=$(wg genkey)
